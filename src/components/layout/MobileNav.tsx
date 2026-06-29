@@ -12,6 +12,8 @@ export function MobileNav() {
   const supabase = createClient()
 
   useEffect(() => {
+    // Check if on login page, skip role fetching if so
+    if (pathname === '/login') return;
     async function loadRole() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -81,9 +83,11 @@ export function MobileNav() {
     },
   ]
 
+  if (pathname === '/login') return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around px-2 py-1">
+      <div className="flex items-center justify-between px-4 py-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href
           return (

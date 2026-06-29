@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { SyncStatus } from '@/components/ui/SyncStatus'
+import { MobileNav } from '@/components/layout/MobileNav'
 import './globals.css'
 
 const inter = Inter({
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-slate-950 text-white font-sans">
         <SyncStatus />
         {children}
+        <MobileNav />
       </body>
     </html>
   )
