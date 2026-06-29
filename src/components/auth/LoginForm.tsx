@@ -1,13 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { login } from '@/actions/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 export function LoginForm() {
+  const [email, setEmail] = useState('')
+  const [remember, setRemember] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('wms_remember_email')
+    if (savedEmail) {
+      setEmail(savedEmail)
+      setRemember(true)
+    }
+  }, [])
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true)
@@ -16,6 +26,12 @@ export function LoginForm() {
       const result = await login(formData)
       if (result?.error) {
         setError(result.error)
+      } else {
+        if (remember) {
+          localStorage.setItem('wms_remember_email', email)
+        } else {
+          localStorage.removeItem('wms_remember_email')
+        }
       }
     } catch {
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
@@ -51,6 +67,8 @@ export function LoginForm() {
               name="email"
               type="email"
               label="อีเมล"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               autoComplete="email"
               required
@@ -73,6 +91,21 @@ export function LoginForm() {
                 </svg>
               }
             />
+
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center gap-2 py-1">
+              <input
+                id="remember"
+                name="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="w-4 h-4 rounded bg-white/5 border-white/10 text-indigo-500 focus:ring-indigo-500/20 focus:ring-offset-0 focus:outline-none"
+              />
+              <label htmlFor="remember" className="text-sm font-medium text-white/70 cursor-pointer select-none">
+                จดจำอีเมลของฉัน
+              </label>
+            </div>
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400 flex items-center gap-2">
