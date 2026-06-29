@@ -1,9 +1,10 @@
-import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles, getSalesAnalytics } from '@/actions/owner'
+import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles, getSalesAnalytics, getCostSummary, getLotLocationStock, getTransactionSummary } from '@/actions/owner'
 import { Header } from '@/components/layout/Header'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { CsvImport } from '@/components/owner/CsvImport'
 import { UserManagement } from '@/components/owner/UserManagement'
+import { LotLocationViewer } from '@/components/owner/LotLocationViewer'
 import { format } from 'date-fns'
 
 export default async function OwnerDashboardPage() {
@@ -13,6 +14,9 @@ export default async function OwnerDashboardPage() {
   const auditLogs = await getAuditLogs(10)
   const profiles = await getAllProfiles()
   const sales = await getSalesAnalytics()
+  const costSummary = await getCostSummary()
+  const lotLocationStock = await getLotLocationStock()
+  const transactionSummary = await getTransactionSummary()
 
   const totalValue = valuation.reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
   const availableValue = valuation.filter((v: any) => v.status === 'AVAILABLE').reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
@@ -126,6 +130,13 @@ export default async function OwnerDashboardPage() {
             </div>
           </Card>
         </div>
+
+        {/* Lot Location Stock & Cost Analysis */}
+        <LotLocationViewer 
+          lotLocationStock={lotLocationStock}
+          costSummary={costSummary}
+          transactionSummary={transactionSummary}
+        />
 
         {/* Dead Stock Alert */}
         <div className="space-y-3">
