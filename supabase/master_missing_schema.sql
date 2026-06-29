@@ -3,14 +3,23 @@
 -- ===========================================================================
 -- รันไฟล์นี้ครั้งเดียวใน Supabase SQL Editor เพื่อสร้างทุกส่วนของระบบ WMS ที่ยังตกหล่น
 
--- 1. Create Enums securely
+-- 0. Drop existing views that might depend on the transaction_type column
+DROP VIEW IF EXISTS public.low_stock_view CASCADE;
+DROP VIEW IF EXISTS public.valuation_summary_view CASCADE;
+DROP VIEW IF EXISTS public.dead_stock_view CASCADE;
+DROP VIEW IF EXISTS public.available_stock_view CASCADE;
+
+-- 1. Upgrade transaction_type column in stock_ledger to VARCHAR (prevents Postgres Enum limitations)
+ALTER TABLE public.stock_ledger ALTER COLUMN transaction_type TYPE VARCHAR;
+
+-- 2. Create Enums securely
 DO $$ BEGIN
   CREATE TYPE order_status AS ENUM ('PENDING', 'SHIPPED', 'RETURNED', 'CANCELLED');
 EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
 
--- 2. Create Order Headers Table
+-- 3. Create Order Headers Table
 CREATE TABLE IF NOT EXISTS public.order_headers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_name TEXT NOT NULL,
@@ -21,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.order_headers (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3. Create Order Items Table
+-- 4. Create Order Items Table
 CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES public.order_headers(id) ON DELETE CASCADE NOT NULL,
@@ -45,7 +54,7 @@ DROP POLICY IF EXISTS "order_items_access_authenticated" ON public.order_items;
 CREATE POLICY "order_items_access_authenticated" ON public.order_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 
--- 4. Add Missing Columns to Products and Stock Ledger
+-- 5. Add Missing Columns to Products and Stock Ledger
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS warehouse_code VARCHAR;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS lot_date VARCHAR;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category VARCHAR;
@@ -55,7 +64,7 @@ ALTER TABLE public.stock_ledger ADD COLUMN IF NOT EXISTS reason_code VARCHAR;
 ALTER TABLE public.stock_ledger ADD COLUMN IF NOT EXISTS device_info TEXT;
 
 
--- 5. Create Audit Logs Table
+-- 6. Create Audit Logs Table
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_name VARCHAR NOT NULL,
@@ -77,7 +86,7 @@ CREATE POLICY "audit_logs_owner_select" ON public.audit_logs
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'owner'));
 
 
--- 6. Trigger Function for Dynamic SKU Generation
+-- 7. Trigger Function for Dynamic SKU Generation
 CREATE OR REPLACE FUNCTION public.generate_dynamic_sku()
 RETURNS TRIGGER 
 LANGUAGE plpgsql
@@ -105,7 +114,7 @@ BEFORE INSERT ON public.products
 FOR EACH ROW EXECUTE FUNCTION public.generate_dynamic_sku();
 
 
--- 7. Trigger Function for Audit Logs
+-- 8. Trigger Function for Audit Logs
 CREATE OR REPLACE FUNCTION public.log_audit_event()
 RETURNS TRIGGER 
 LANGUAGE plpgsql
@@ -153,13 +162,8 @@ AFTER INSERT OR UPDATE OR DELETE ON public.products
 FOR EACH ROW EXECUTE FUNCTION public.log_audit_event();
 
 
--- 8. Create Views (Cascade Dropping First)
-DROP VIEW IF EXISTS public.low_stock_view CASCADE;
-DROP VIEW IF EXISTS public.valuation_summary_view CASCADE;
-DROP VIEW IF EXISTS public.dead_stock_view CASCADE;
-DROP VIEW IF EXISTS public.available_stock_view CASCADE;
-
--- 8a. Available Stock View
+-- 9. Create Views
+-- 9a. Available Stock View
 CREATE VIEW public.available_stock_view AS
 SELECT 
     p.id AS product_id,
@@ -191,7 +195,7 @@ GROUP BY p.id, p.sku, p.name, p.grade, p.status, p.cost_price;
 
 GRANT SELECT ON public.available_stock_view TO authenticated;
 
--- 8b. Valuation Summary View
+-- 9b. Valuation Summary View
 CREATE VIEW public.valuation_summary_view AS
 SELECT 
     p.lot_date,
@@ -206,7 +210,7 @@ GROUP BY p.lot_date, v.grade, v.status;
 
 GRANT SELECT ON public.valuation_summary_view TO authenticated;
 
--- 8c. Dead Stock View
+-- 9c. Dead Stock View
 CREATE VIEW public.dead_stock_view AS
 SELECT 
     p.id AS product_id,
@@ -227,7 +231,7 @@ HAVING (SUM(CASE WHEN sl.transaction_type = 'IN' THEN sl.quantity ELSE 0 END) -
 
 GRANT SELECT ON public.dead_stock_view TO authenticated;
 
--- 8d. Low Stock View
+-- 9d. Low Stock View
 CREATE VIEW public.low_stock_view AS
 SELECT 
     product_id,
@@ -241,7 +245,7 @@ WHERE available_qty < 5 AND available_qty > 0 AND status = 'AVAILABLE';
 GRANT SELECT ON public.low_stock_view TO authenticated;
 
 
--- 9. RPC Functions with Locks (SELECT FOR UPDATE)
+-- 10. RPC Functions with Locks (SELECT FOR UPDATE)
 CREATE OR REPLACE FUNCTION public.confirm_shipping(p_order_id UUID, p_user_id UUID)
 RETURNS void
 LANGUAGE plpgsql
@@ -368,7 +372,7 @@ END;
 $$;
 
 
--- 10. Database Constraint Trigger to Prevent Negative Stock
+-- 11. Database Constraint Trigger to Prevent Negative Stock
 CREATE OR REPLACE FUNCTION public.check_stock_integrity()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -410,7 +414,7 @@ BEFORE INSERT ON public.stock_ledger
 FOR EACH ROW EXECUTE FUNCTION public.check_stock_integrity();
 
 
--- 11. Add Default Seed Data for Locations and Special Returns Zone
+-- 12. Add Default Seed Data for Locations and Special Returns Zone
 INSERT INTO public.locations (id, zone_name, barcode_ref) VALUES
   ('00000000-0000-0000-0000-000000000000', 'ZONE-RETURN', 'RETURN-ZONE')
 ON CONFLICT (id) DO NOTHING;
