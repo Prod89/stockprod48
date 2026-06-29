@@ -11,7 +11,7 @@ export function LivePackingScanner() {
   const [productInfo, setProductInfo] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const [scannedList, setScannedList] = useState<{sku: string, name: string, time: string, type: string}[]>([])
+  const [scannedList, setScannedList] = useState<{id: string, sku: string, name: string, time: string, type: string, cancelled?: boolean}[]>([])
   const [returnReason, setReturnReason] = useState('ลูกค้าเปลี่ยนใจ')
   
   const inputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +61,7 @@ export function LivePackingScanner() {
       } else {
         // Success
         setScannedList(prev => [{
+          id: crypto.randomUUID(),
           sku: productInfo.product.sku,
           name: productInfo.product.name,
           time: new Date().toLocaleTimeString('th-TH'),
@@ -77,18 +78,43 @@ export function LivePackingScanner() {
 
   const exportCsv = () => {
     if (scannedList.length === 0) return
-    const headers = ['Time', 'Type', 'SKU', 'Product Name']
+    const headers = ['Time', 'Type', 'SKU', 'Product Name', 'Status']
     const rows = scannedList.map(item => [
       item.time,
       item.type,
       item.sku,
-      `"${item.name}"`
+      `"${item.name}"`,
+      item.cancelled ? 'Cancelled' : 'Completed'
     ].join(','))
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n')
     const link = document.createElement('a')
     link.href = encodeURI(csvContent)
     link.download = `live-packing-${mode.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`
     link.click()
+  }
+
+  const handleUndo = (item: any) => {
+    if (item.cancelled) return
+    setError(null)
+    startTransition(async () => {
+      let result;
+      if (item.type === 'OUTBOUND') {
+        // Reverse OUTBOUND by returning it
+        result = await directReturn(item.sku, 1, 'ยกเลิกการจัดส่ง (สแกนผิด)')
+      } else {
+        // Reverse RETURN by sending it out
+        result = await directOutbound(item.sku, 1)
+      }
+
+      if (result.error) {
+        setError('ยกเลิกไม่สำเร็จ: ' + result.error)
+      } else {
+        // Mark as cancelled in UI
+        setScannedList(prev => prev.map(p => p.id === item.id ? { ...p, cancelled: true } : p))
+        // Refocus input
+        inputRef.current?.focus()
+      }
+    })
   }
 
   const isOutbound = mode === 'OUTBOUND'
@@ -235,11 +261,26 @@ export function LivePackingScanner() {
                   <p className="text-xs text-white truncate pr-2">{item.name}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`text-xs font-bold px-2 py-1 rounded ${
-                    item.type === 'OUTBOUND' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'
-                  }`}>
-                    {item.type === 'OUTBOUND' ? '✓ จัดส่งแล้ว' : '↩ รับคืนแล้ว'}
-                  </span>
+                  {item.cancelled ? (
+                    <span className="text-xs font-bold px-2 py-1 rounded text-slate-400 bg-slate-800 line-through border border-white/10">
+                      ถูกยกเลิก
+                    </span>
+                  ) : (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
+                        item.type === 'OUTBOUND' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'
+                      }`}>
+                        {item.type === 'OUTBOUND' ? '✓ จัดส่งแล้ว' : '↩ รับคืนแล้ว'}
+                      </span>
+                      <button 
+                        onClick={() => handleUndo(item)}
+                        disabled={isPending}
+                        className="text-[10px] text-red-400 hover:text-red-300 underline underline-offset-2 transition-colors disabled:opacity-50"
+                      >
+                        สแกนผิด (ยกเลิก)
+                      </button>
+                    </div>
+                  )}
                   <p className="text-[10px] text-slate-500 mt-1">{item.time}</p>
                 </div>
               </div>
