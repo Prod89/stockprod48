@@ -4,7 +4,7 @@ export type UserRole = 'owner' | 'staff'
 
 export type ProductGrade = 'Premium' | '1' | '2' | '3'
 
-export type TransactionType = 'IN' | 'OUT' | 'MOVE'
+export type TransactionType = 'IN' | 'OUT' | 'MOVE' | 'ADJUST'
 
 export type OrderStatus = 'PENDING' | 'SHIPPED' | 'RETURNED' | 'CANCELLED'
 
