@@ -84,6 +84,7 @@ export async function getRecentOrders(status?: string) {
   let query = supabase.from('order_headers')
     .select(`
       *,
+      profiles:user_id(full_name),
       order_items (
         *,
         product:products (sku, name, grade)

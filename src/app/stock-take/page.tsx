@@ -2,6 +2,8 @@ import { getProducts, getLocations } from '@/actions/inbound'
 import { Header } from '@/components/layout/Header'
 import { StockTakeScanner } from '@/components/stock/StockTakeScanner'
 import { createClient } from '@/lib/supabase/server'
+import { getRecentTransactions } from '@/actions/history'
+import { RecentActions } from '@/components/history/RecentActions'
 
 export default async function StockTakePage() {
   const products = await getProducts()
@@ -12,11 +14,14 @@ export default async function StockTakePage() {
   // To keep it simple and robust, we fetch AvailableStockView to show expected total qty
   const { data: stockView } = await supabase.from('available_stock_view').select('product_id, physical_qty')
 
+  const recentActions = await getRecentTransactions('ADJUST', 5)
+
   return (
     <>
       <Header title="เช็คสต็อก (Stock Take)" showBack backHref="/dashboard" />
       <div className="p-4 pb-32">
         <StockTakeScanner products={products} locations={locations} stockView={stockView || []} />
+        <RecentActions title="ประวัติการตรวจนับล่าสุด" actions={recentActions} />
       </div>
     </>
   )

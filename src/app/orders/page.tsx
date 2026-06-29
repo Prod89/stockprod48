@@ -25,8 +25,13 @@ export default async function OrdersPage() {
             <Card key={order.id} padding="md" className="flex flex-col gap-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium text-white">{order.customer_name}</h3>
-                  <p className="text-xs text-slate-400">{format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-white">{order.customer_name}</h3>
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                      โดย: {order.profiles?.full_name || 'ไม่ทราบชื่อ'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">{format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')}</p>
                 </div>
                 <Badge 
                   variant={order.status === 'PENDING' ? 'warning' : order.status === 'SHIPPED' ? 'success' : order.status === 'RETURNED' ? 'error' : 'default'}
