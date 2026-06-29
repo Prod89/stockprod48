@@ -145,3 +145,34 @@ export async function bulkMoveStock(
 
   return { success: true }
 }
+
+export async function updateProductDetails(
+  productId: string,
+  updates: {
+    name?: string
+    cost_price?: number
+    grade?: string
+  }
+) {
+  const supabase = await checkOwnerRole()
+
+  const updatePayload: Record<string, any> = {}
+  if (updates.name !== undefined) updatePayload.name = updates.name
+  if (updates.cost_price !== undefined) updatePayload.cost_price = updates.cost_price
+  if (updates.grade !== undefined) updatePayload.grade = updates.grade
+  updatePayload.updated_at = new Date().toISOString()
+
+  const { error } = await supabase
+    .from('products')
+    .update(updatePayload)
+    .eq('id', productId)
+
+  if (error) {
+    console.error('Update product error:', error)
+    return { error: 'แก้ไขข้อมูลสินค้าไม่สำเร็จ: ' + error.message }
+  }
+
+  revalidatePath('/owner/inventory')
+  revalidatePath('/dashboard')
+  return { success: true }
+}

@@ -7,7 +7,7 @@ import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import type { InventoryDetailItem } from '@/actions/inventory'
-import { bulkMoveStock } from '@/actions/inventory'
+import { bulkMoveStock, updateProductDetails } from '@/actions/inventory'
 import { updateEntityDetails } from '@/actions/owner'
 import { format } from 'date-fns'
 import { th } from 'date-fns/locale'
@@ -34,7 +34,14 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
   const [moveReason, setMoveReason] = useState('จัดระเบียบสต็อก')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [editingDetails, setEditingDetails] = useState<{ id: string, name: string } | null>(null)
+  const [editingLocation, setEditingLocation] = useState<{ id: string, name: string } | null>(null)
+  const [editingProduct, setEditingProduct] = useState<{
+    product_id: string
+    sku: string
+    name: string
+    cost_price: number
+    grade: string
+  } | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // Memoized filtered and sorted data
@@ -155,13 +162,13 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
     })
   }
 
-  const handleSaveDetails = () => {
-    if (!editingDetails || !editingDetails.name) return
+  const handleSaveLocation = () => {
+    if (!editingLocation || !editingLocation.name) return
     startTransition(async () => {
       const result = await updateEntityDetails(
         'LOCATION',
-        editingDetails.id,
-        editingDetails.name,
+        editingLocation.id,
+        editingLocation.name,
         ''
       )
       if (result.error) {
@@ -170,13 +177,51 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
         setMessage({ type: 'success', text: 'แก้ไขชื่อสถานที่สำเร็จ' })
         // Optimistic update
         setData(prev => prev.map(item => 
-          item.location_id === editingDetails.id ? { ...item, zone_name: editingDetails.name } : item
+          item.location_id === editingLocation.id ? { ...item, zone_name: editingLocation.name } : item
         ))
-        setEditingDetails(null)
+        setEditingLocation(null)
       }
       setTimeout(() => setMessage(null), 3000)
     })
   }
+
+  const handleSaveProduct = () => {
+    if (!editingProduct) return
+    startTransition(async () => {
+      const result = await updateProductDetails(editingProduct.product_id, {
+        name: editingProduct.name,
+        cost_price: editingProduct.cost_price,
+        grade: editingProduct.grade,
+      })
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setMessage({ type: 'success', text: `แก้ไขสินค้า ${editingProduct.sku} สำเร็จ` })
+        // Optimistic update
+        setData(prev => prev.map(item => {
+          if (item.product_id === editingProduct.product_id) {
+            const newCost = editingProduct.cost_price
+            return {
+              ...item,
+              name: editingProduct.name,
+              cost_price: newCost,
+              total_value: newCost * item.quantity,
+            }
+          }
+          return item
+        }))
+        setEditingProduct(null)
+      }
+      setTimeout(() => setMessage(null), 3000)
+    })
+  }
+
+  const gradeOptions = [
+    { value: 'Premium', label: 'Premium' },
+    { value: '1', label: 'เกรด 1' },
+    { value: '2', label: 'เกรด 2' },
+    { value: '3', label: 'เกรด 3' },
+  ]
 
   return (
     <div className="space-y-6">
@@ -253,7 +298,7 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
       )}
 
       {/* Editing Modal for Location Details */}
-      {editingDetails && (
+      {editingLocation && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-white/10 p-5 rounded-2xl w-full max-w-sm space-y-4 shadow-2xl">
             <h4 className="text-lg font-bold text-white">แก้ไขชื่อสถานที่ (Location)</h4>
@@ -262,16 +307,76 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                 <label className="text-xs text-slate-400 block mb-1">ชื่อสถานที่</label>
                 <input 
                   type="text"
-                  value={editingDetails.name} onChange={e => setEditingDetails({...editingDetails, name: e.target.value})}
+                  value={editingLocation.name} onChange={e => setEditingLocation({...editingLocation, name: e.target.value})}
                   className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
             
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => setEditingDetails(null)} variant="secondary" className="flex-1">ยกเลิก</Button>
-              <Button onClick={handleSaveDetails} disabled={isPending || !editingDetails.name} className="flex-1">
+              <Button onClick={() => setEditingLocation(null)} variant="secondary" className="flex-1">ยกเลิก</Button>
+              <Button onClick={handleSaveLocation} disabled={isPending || !editingLocation.name} className="flex-1">
                 {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editing Modal for Product Details */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 p-5 rounded-2xl w-full max-w-md space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-bold text-white">แก้ไขรายละเอียดสินค้า</h4>
+              <span className="font-mono text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg">{editingProduct.sku}</span>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 block mb-1.5">ชื่อสินค้า (Product Name)</label>
+                <input 
+                  type="text"
+                  value={editingProduct.name}
+                  onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
+                  className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1.5">ต้นทุน/ชิ้น (Cost Price)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">฿</span>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editingProduct.cost_price}
+                      onChange={e => setEditingProduct({...editingProduct, cost_price: parseFloat(e.target.value) || 0})}
+                      className="w-full bg-slate-800 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1.5">เกรดสินค้า (Grade)</label>
+                  <select
+                    value={editingProduct.grade}
+                    onChange={e => setEditingProduct({...editingProduct, grade: e.target.value})}
+                    className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none"
+                  >
+                    {gradeOptions.map(opt => (
+                      <option key={opt.value} value={opt.value} className="bg-slate-900">{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => setEditingProduct(null)} variant="secondary" className="flex-1">ยกเลิก</Button>
+              <Button onClick={handleSaveProduct} disabled={isPending || !editingProduct.name} className="flex-1">
+                {isPending ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
               </Button>
             </div>
           </div>
@@ -310,6 +415,9 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                 <th className="p-4 font-medium text-center cursor-pointer hover:text-white" onClick={() => handleSort('stock_age_days')}>
                   Age (Days) {sortField === 'stock_age_days' && (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
+                <th className="p-4 font-medium text-center w-16">
+                  จัดการ
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -334,7 +442,7 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                     <div className="flex items-center gap-2">
                       <Badge variant="default">{item.zone_name}</Badge>
                       <button 
-                        onClick={() => setEditingDetails({ id: item.location_id, name: item.zone_name })}
+                        onClick={() => setEditingLocation({ id: item.location_id, name: item.zone_name })}
                         className="text-slate-500 hover:text-indigo-400 p-1 transition-colors" title="แก้ไขชื่อสถานที่"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -364,11 +472,29 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                       )}
                     </div>
                   </td>
+                  <td className="p-4 text-center">
+                    <button
+                      onClick={() => setEditingProduct({
+                        product_id: item.product_id,
+                        sku: item.sku,
+                        name: item.name,
+                        cost_price: item.cost_price,
+                        grade: 'Premium', // default, will be from data if available
+                      })}
+                      className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-400 bg-white/5 hover:bg-indigo-500/10 border border-white/10 hover:border-indigo-500/30 px-2.5 py-1.5 rounded-lg transition-all"
+                      title="แก้ไขรายละเอียดสินค้า"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      แก้ไข
+                    </button>
+                  </td>
                 </tr>
               ))}
               {processedData.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                  <td colSpan={8} className="p-8 text-center text-slate-400">
                     ไม่พบข้อมูลสินค้า
                   </td>
                 </tr>
