@@ -339,3 +339,83 @@ export async function getStockToCash() {
     variance
   }
 }
+
+export async function getInventoryByLocation() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('inventory_by_location_view')
+    .select('*')
+    .order('zone_name', { ascending: true })
+
+  if (error) {
+    console.error('Inventory location error:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function getActiveLocations() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('locations')
+    .select('id, zone_name, status_state, description, barcode_ref')
+    .order('zone_name', { ascending: true })
+
+  if (error) {
+    console.error('Locations fetch error:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function transferStockLocation(
+  productId: string,
+  fromLocationId: string,
+  toLocationId: string,
+  qty: number,
+  reason: string
+) {
+  const supabase = await checkOwnerRole()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase.rpc('transfer_stock_location', {
+    p_product_id: productId,
+    p_from_location_id: fromLocationId,
+    p_to_location_id: toLocationId,
+    p_qty: qty,
+    p_reason: reason,
+    p_user_id: user.id
+  })
+
+  if (error) {
+    console.error('Transfer stock error:', error)
+    return { error: 'ไม่สามารถย้ายสต็อกได้: ' + error.message }
+  }
+  return { success: true }
+}
+
+export async function updateEntityDetails(
+  entityType: 'PRODUCT' | 'LOCATION',
+  entityId: string,
+  name: string,
+  details: string
+) {
+  const supabase = await checkOwnerRole()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase.rpc('update_entity_details', {
+    p_entity_type: entityType,
+    p_entity_id: entityId,
+    p_name: name,
+    p_details: details,
+    p_user_id: user.id
+  })
+
+  if (error) {
+    console.error('Update entity error:', error)
+    return { error: 'แก้ไขข้อมูลไม่สำเร็จ: ' + error.message }
+  }
+  return { success: true }
+}
