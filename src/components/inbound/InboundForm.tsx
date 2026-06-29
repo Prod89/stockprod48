@@ -20,9 +20,10 @@ import { createClient } from '@/lib/supabase/client'
 interface InboundFormProps {
   products: Product[]
   locations: Location[]
+  userRole?: string
 }
 
-export function InboundForm({ products, locations }: InboundFormProps) {
+export function InboundForm({ products, locations, userRole = 'staff' }: InboundFormProps) {
   const [isNewProductMode, setIsNewProductMode] = useState(false)
   
   // Existing product mode
@@ -141,7 +142,7 @@ export function InboundForm({ products, locations }: InboundFormProps) {
 
     try {
       if (isNewProductMode) {
-        if (!newName || !newCategory || !newLotDate || !newWarehouseCode || !selectedGrade || !newCostPrice) {
+        if (!newName || !newCategory || !newLotDate || !newWarehouseCode || !selectedGrade || (userRole === 'owner' && !newCostPrice)) {
           showToast('error', 'กรุณากรอกข้อมูลสินค้าใหม่ให้ครบถ้วน')
           setIsSubmitting(false)
           return
@@ -157,7 +158,11 @@ export function InboundForm({ products, locations }: InboundFormProps) {
         formData.set('category', newCategory)
         formData.set('lot_date', newLotDate)
         formData.set('warehouse_code', newWarehouseCode)
-        formData.set('cost_price', newCostPrice)
+        if (userRole === 'owner') {
+          formData.set('cost_price', newCostPrice)
+        } else {
+          formData.set('cost_price', '0') // default or hide
+        }
         formData.set('grade', selectedGrade)
         formData.set('status', newStatus)
         formData.set('quantity', quantity)
@@ -292,7 +297,9 @@ export function InboundForm({ products, locations }: InboundFormProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <Input label="วันที่/รอบ (Lot Date)" value={newLotDate} onChange={e => setNewLotDate(e.target.value)} disabled={isSubmitting} />
-            <Input label="ต้นทุน (Cost Price)" type="number" value={newCostPrice} onChange={e => setNewCostPrice(e.target.value)} disabled={isSubmitting} />
+            {userRole === 'owner' && (
+              <Input label="ต้นทุน (Cost Price)" type="number" value={newCostPrice} onChange={e => setNewCostPrice(e.target.value)} disabled={isSubmitting} />
+            )}
           </div>
 
           <Select

@@ -6,10 +6,14 @@ import { redirect } from 'next/navigation'
 async function checkOwnerRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) {
+    throw new Error('401 Unauthorized: Please login')
+  }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'owner') redirect('/dashboard')
+  if (profile?.role !== 'owner') {
+    throw new Error('403 Forbidden: Owner access required')
+  }
   
   return supabase
 }

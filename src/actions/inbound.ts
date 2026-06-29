@@ -74,7 +74,8 @@ export async function createProductAndInboundEntry(formData: FormData) {
   const category = formData.get('category') as string
   const lotDate = formData.get('lot_date') as string
   const warehouseCode = formData.get('warehouse_code') as string
-  const costPrice = parseFloat(formData.get('cost_price') as string)
+  const parsedCost = parseFloat(formData.get('cost_price') as string)
+  const costPrice = isNaN(parsedCost) ? null : parsedCost
   const grade = formData.get('grade') as string
   const status = formData.get('status') as string || 'AVAILABLE'
   
