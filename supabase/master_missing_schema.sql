@@ -10,7 +10,7 @@ DROP VIEW IF EXISTS public.dead_stock_view CASCADE;
 DROP VIEW IF EXISTS public.available_stock_view CASCADE;
 
 -- 1. Upgrade transaction_type column in stock_ledger to VARCHAR (prevents Postgres Enum limitations)
-ALTER TABLE public.stock_ledger ALTER COLUMN transaction_type TYPE VARCHAR;
+ALTER TABLE public.stock_ledger ALTER COLUMN transaction_type TYPE VARCHAR USING transaction_type::VARCHAR;
 
 -- 2. Create Enums securely
 DO $$ BEGIN
