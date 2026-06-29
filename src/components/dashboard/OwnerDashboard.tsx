@@ -2,6 +2,8 @@ import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllPro
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { CsvImport } from '@/components/owner/CsvImport'
+import { UserManagement } from '@/components/owner/UserManagement'
 import { LotLocationViewer } from '@/components/owner/LotLocationViewer'
 import { AgingDashboard } from '@/components/owner/AgingDashboard'
 import { BaleCostManager } from '@/components/owner/BaleCostManager'
@@ -214,7 +216,17 @@ export async function OwnerDashboard() {
           </Card>
         </div>
 
+        {/* User Management */}
+        <div className="space-y-3">
+          <UserManagement initialProfiles={profiles} />
+        </div>
 
+        {/* CSV Import */}
+        <div className="space-y-3">
+          <CsvImport />
+        </div>
+
+        {/* Audit Logs */}
         <div className="space-y-3">
           <h3 className="text-lg font-bold text-white">ประวัติการทำงาน (Audit Logs)</h3>
           <Card padding="md" className="space-y-4">

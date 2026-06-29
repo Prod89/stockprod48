@@ -105,12 +105,6 @@ export function SidebarMenu() {
         { href: '/orders', label: 'จัดการออเดอร์', icon: '🧾', desc: 'ดูรายการคำสั่งซื้อทั้งหมด' },
         { href: '/orders/create', label: 'สร้างออเดอร์', icon: '➕', desc: 'สร้างคำสั่งซื้อใหม่' },
       ]
-    },
-    {
-      section: 'ตั้งค่าระบบ',
-      items: [
-        { href: '/owner/settings', label: 'ตั้งค่าระบบ', icon: '⚙️', desc: 'จัดการผู้ใช้งาน นำเข้าข้อมูล (CSV)' },
-      ]
     }
   ]
 
