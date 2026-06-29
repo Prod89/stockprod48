@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 interface BarcodeInputProps {
@@ -39,16 +39,6 @@ export function BarcodeInput({
     }
   }, [disabled])
 
-  // Re-focus after a short delay (for barcode scanner workflow)
-  const refocus = useCallback(() => {
-    setTimeout(() => {
-      if (inputRef.current && !disabled) {
-        inputRef.current.focus()
-        inputRef.current.select()
-      }
-    }, 100)
-  }, [disabled])
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -79,10 +69,7 @@ export function BarcodeInput({
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            setIsFocused(false)
-            refocus()
-          }}
+          onBlur={() => setIsFocused(false)}
           disabled={disabled}
           placeholder={placeholder}
           autoComplete="off"
