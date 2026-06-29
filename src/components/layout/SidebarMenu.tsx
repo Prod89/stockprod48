@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils/cn'
 
@@ -10,6 +11,7 @@ export function SidebarMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const [role, setRole] = useState<'owner' | 'staff' | null>(null)
   const [userName, setUserName] = useState('')
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -35,6 +37,7 @@ export function SidebarMenu() {
       }
     }
     loadProfile()
+    setMounted(true)
   }, [supabase])
 
   // Close on outside click
@@ -106,19 +109,8 @@ export function SidebarMenu() {
 
   const menuGroups = role === 'owner' ? ownerMenuItems : staffMenuItems
 
-  return (
+  const drawerContent = (
     <>
-      {/* Hamburger Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="p-2 -ml-2 rounded-xl hover:bg-white/10 active:bg-white/20 text-white/80 transition-all duration-150"
-        aria-label="เปิดเมนู"
-      >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-
       {/* Overlay */}
       <div
         className={cn(
@@ -131,7 +123,7 @@ export function SidebarMenu() {
       <div
         ref={sidebarRef}
         className={cn(
-          'fixed top-0 left-0 z-[101] h-full w-[280px] bg-slate-900 border-r border-white/10 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out flex flex-col',
+          'fixed top-0 left-0 z-[101] h-screen w-[280px] bg-slate-900 border-r border-white/10 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -213,6 +205,26 @@ export function SidebarMenu() {
           </button>
         </div>
       </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* Hamburger Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="p-2 -ml-2 rounded-xl hover:bg-white/10 active:bg-white/20 text-white/80 transition-all duration-150"
+        aria-label="เปิดเมนู"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      
+      {/* Use Portal if mounted on client to prevent stacking context clipping */}
+      {mounted && typeof document !== 'undefined' 
+        ? createPortal(drawerContent, document.body)
+        : null}
     </>
   )
 }
