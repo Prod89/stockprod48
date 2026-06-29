@@ -39,6 +39,27 @@ export async function updateSession(request: NextRequest) {
     // Refresh session if expired - required for Server Components
     const { data: { user } } = await supabase.auth.getUser()
 
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_active')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile && profile.is_active === false) {
+        // Force sign out and redirect
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        url.searchParams.set('error', 'revoked')
+        
+        // Return redirect response and clear cookies (will trigger signout on browser)
+        const response = NextResponse.redirect(url)
+        response.cookies.delete('sb-access-token')
+        response.cookies.delete('sb-refresh-token')
+        return response
+      }
+    }
+
     // Redirect unauthenticated users to login (except for login page and public assets)
     const isLoginPage = request.nextUrl.pathname === '/login'
     const isPublicAsset = request.nextUrl.pathname.startsWith('/_next') ||

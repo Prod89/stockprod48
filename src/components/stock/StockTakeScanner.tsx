@@ -13,7 +13,7 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [actualQty, setActualQty] = useState<number | ''>('')
   const [locationId, setLocationId] = useState<string>('')
-  const [reasonCode, setReasonCode] = useState<string>('STOCK_TAKE')
+  const [reasonCode, setReasonCode] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -155,12 +155,13 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
             />
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-300">เหตุผลการปรับปรุง (Reason Code)</label>
+              <label className="text-sm font-medium text-slate-300">เหตุผลการปรับปรุง (Reason Code) <span className="text-red-400">*</span></label>
               <select 
                 className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={reasonCode}
                 onChange={(e) => setReasonCode(e.target.value)}
               >
+                <option value="">-- กรุณาเลือกเหตุผล --</option>
                 <option value="STOCK_TAKE">นับสต็อกใหม่ (Stock Take)</option>
                 <option value="DAMAGED">สินค้าเสียหาย (Damaged)</option>
                 <option value="WRONG_GRADE">เปลี่ยนเกรด (Wrong Grade)</option>
@@ -171,8 +172,8 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
             <Button 
               onClick={handleSubmit} 
               isLoading={loading}
-              disabled={diffQty === 0 || typeof actualQty !== 'number'}
-              className={`w-full h-14 text-lg ${diffQty !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+              disabled={diffQty === 0 || typeof actualQty !== 'number' || !reasonCode}
+              className={`w-full h-14 text-lg ${diffQty !== 0 && reasonCode ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
             >
               ปรับปรุงสต็อก (Adjust)
             </Button>

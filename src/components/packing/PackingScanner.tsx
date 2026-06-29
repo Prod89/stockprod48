@@ -5,15 +5,34 @@ import { BarcodeInput } from '../inbound/BarcodeInput'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
-import { confirmShipping } from '@/actions/fulfillment'
+import { confirmShipping, returnOrderToStock } from '@/actions/fulfillment'
 import { jsPDF } from 'jspdf'
 
 export function PackingScanner({ orders }: { orders: any[] }) {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const [scannedItems, setScannedItems] = useState<{ [productId: string]: number }>({})
   const [loading, setLoading] = useState(false)
+  const [returnLoading, setReturnLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const handleReturnToStock = async () => {
+    if (!selectedOrder) return
+    if (!confirm(`ยืนยันการคืนสินค้าทั้งหมดของออเดอร์นี้ (${selectedOrder.customer_name}) กลับเข้าสต็อกคลัง?`)) return
+    
+    setReturnLoading(true)
+    setError(null)
+    const result = await returnOrderToStock(selectedOrder.id)
+    setReturnLoading(false)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setSuccess(true)
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    }
+  }
 
   const downloadPickingList = () => {
     if (!selectedOrder) return
@@ -150,7 +169,7 @@ export function PackingScanner({ orders }: { orders: any[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-2">
         <div>
           <h2 className="text-lg font-medium text-white">
             กำลังแพ็ค: <span className="text-indigo-400">{selectedOrder.customer_name}</span>
@@ -159,9 +178,20 @@ export function PackingScanner({ orders }: { orders: any[] }) {
             ← กลับไปเลือกออเดอร์
           </button>
         </div>
-        <Button onClick={downloadPickingList} size="sm" variant="secondary" className="min-h-[36px]">
-          พิมพ์ใบจัดของ (PDF)
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={downloadPickingList} size="sm" variant="secondary" className="min-h-[36px] text-xs">
+            พิมพ์ใบจัดของ (PDF)
+          </Button>
+          <Button 
+            onClick={handleReturnToStock} 
+            isLoading={returnLoading} 
+            size="sm" 
+            variant="danger" 
+            className="min-h-[36px] text-xs bg-red-500/20 text-red-400 border border-red-500/20 hover:bg-red-500/30"
+          >
+            คืนสต็อก
+          </Button>
+        </div>
       </div>
 
       <Card padding="md" className="space-y-4">

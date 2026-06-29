@@ -49,3 +49,31 @@ export async function getAuditLogs(limit = 20) {
   if (error) console.error('Audit logs error:', error)
   return data || []
 }
+
+export async function getAllProfiles() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('full_name')
+  
+  if (error) {
+    console.error('Fetch profiles failed:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function toggleUserActive(userId: string, active: boolean) {
+  const supabase = await checkOwnerRole()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_active: active })
+    .eq('id', userId)
+  
+  if (error) {
+    console.error('Toggle user status failed:', error)
+    return { error: 'ไม่สามารถเปลี่ยนสถานะพนักงานได้' }
+  }
+  return { success: true }
+}

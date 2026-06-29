@@ -82,3 +82,25 @@ export async function moveStock(productId: string, destinationLocationId: string
   
   return { success: true }
 }
+
+export async function returnOrderToStock(orderId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase.rpc('return_order_to_stock', {
+    p_order_id: orderId,
+    p_user_id: user.id
+  })
+
+  if (error) {
+    console.error('Return order error:', error)
+    return { error: error.message || 'Failed to return order to stock' }
+  }
+
+  revalidatePath('/packing')
+  revalidatePath('/dashboard')
+  
+  return { success: true }
+}

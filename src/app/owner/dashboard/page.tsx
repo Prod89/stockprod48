@@ -1,8 +1,9 @@
-import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock } from '@/actions/owner'
+import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles } from '@/actions/owner'
 import { Header } from '@/components/layout/Header'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { CsvImport } from '@/components/owner/CsvImport'
+import { UserManagement } from '@/components/owner/UserManagement'
 import { format } from 'date-fns'
 
 export default async function OwnerDashboardPage() {
@@ -10,6 +11,7 @@ export default async function OwnerDashboardPage() {
   const deadStock = await getDeadStock()
   const lowStock = await getLowStock()
   const auditLogs = await getAuditLogs(10)
+  const profiles = await getAllProfiles()
 
   const totalValue = valuation.reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
   const availableValue = valuation.filter((v: any) => v.status === 'AVAILABLE').reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
@@ -109,6 +111,11 @@ export default async function OwnerDashboardPage() {
               )}
             </div>
           </Card>
+        </div>
+
+        {/* User Management & Security Lockdown */}
+        <div className="space-y-3">
+          <UserManagement initialProfiles={profiles} />
         </div>
 
         {/* Offline Recovery / CSV Import */}
