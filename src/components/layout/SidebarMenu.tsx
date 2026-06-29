@@ -76,11 +76,11 @@ export function SidebarMenu() {
       section: 'งานหน้าร้าน',
       items: [
         { href: '/dashboard', label: 'เมนูหลัก', icon: '🏠' },
-        { href: '/inbound', label: 'รับเข้าสินค้า', icon: '📥', desc: 'สแกนบาร์โค้ดรับสินค้าเข้าคลัง' },
-        { href: '/packing', label: 'จัดแพ็คออเดอร์', icon: '📦', desc: 'หยิบสินค้าตามออเดอร์ลูกค้า' },
-        { href: '/stock-take', label: 'เช็คสต็อก', icon: '📋', desc: 'ตรวจนับสินค้าคงเหลือ' },
-        { href: '/returns', label: 'คืนสินค้า', icon: '🔄', desc: 'รับสินค้าตีกลับเข้าคลัง' },
-        { href: '/putaway', label: 'จัดเก็บเข้าชั้น', icon: '🗄️', desc: 'ย้ายสินค้าไปพิกัดจัดเก็บ' },
+        { href: '/stock-take', label: 'นับสต็อก', icon: '📋', desc: 'ตรวจนับสินค้าคงเหลือ' },
+        { href: '/inbound', label: 'สินค้าเข้า', icon: '📥', desc: 'สแกนบาร์โค้ดรับสินค้าเข้าคลัง' },
+        { href: '/packing', label: 'เบิกออกรอขาย', icon: '📦', desc: 'หยิบสินค้าตามออเดอร์ลูกค้า' },
+        { href: '/orders', label: 'ขายแล้วรอจัดส่ง', icon: '🧾', desc: 'ออเดอร์ที่เตรียมจัดส่ง' },
+        { href: '/putaway', label: 'สินค้าเหลือส่งคืน', icon: '🗄️', desc: 'เก็บสินค้ากลับเข้าชั้นวาง' },
       ]
     }
   ]
@@ -90,11 +90,11 @@ export function SidebarMenu() {
       section: 'งานหน้าร้าน',
       items: [
         { href: '/dashboard', label: 'เมนูหลัก', icon: '🏠' },
-        { href: '/inbound', label: 'รับเข้าสินค้า', icon: '📥', desc: 'สแกนบาร์โค้ดรับสินค้าเข้าคลัง' },
-        { href: '/packing', label: 'จัดแพ็คออเดอร์', icon: '📦', desc: 'หยิบสินค้าตามออเดอร์ลูกค้า' },
-        { href: '/stock-take', label: 'เช็คสต็อก', icon: '📋', desc: 'ตรวจนับสินค้าคงเหลือ' },
-        { href: '/returns', label: 'คืนสินค้า', icon: '🔄', desc: 'รับสินค้าตีกลับเข้าคลัง' },
-        { href: '/putaway', label: 'จัดเก็บเข้าชั้น', icon: '🗄️', desc: 'ย้ายสินค้าไปพิกัดจัดเก็บ' },
+        { href: '/stock-take', label: 'นับสต็อก', icon: '📋', desc: 'ตรวจนับสินค้าคงเหลือ' },
+        { href: '/inbound', label: 'สินค้าเข้า', icon: '📥', desc: 'สแกนบาร์โค้ดรับสินค้าเข้าคลัง' },
+        { href: '/packing', label: 'เบิกออกรอขาย', icon: '📦', desc: 'หยิบสินค้าตามออเดอร์ลูกค้า' },
+        { href: '/orders', label: 'ขายแล้วรอจัดส่ง', icon: '🧾', desc: 'ออเดอร์ที่เตรียมจัดส่ง' },
+        { href: '/putaway', label: 'สินค้าเหลือส่งคืน', icon: '🗄️', desc: 'เก็บสินค้ากลับเข้าชั้นวาง' },
       ]
     },
     {
@@ -102,7 +102,6 @@ export function SidebarMenu() {
       items: [
         { href: '/dashboard', label: 'แดชบอร์ดผู้บริหาร', icon: '📊', desc: 'ภาพรวมการเงิน สต็อก กำไร' },
         { href: '/owner/inventory', label: 'คลังสินค้าเชิงลึก', icon: '🔍', desc: 'ดูสต็อก ต้นทุน และ Bulk Edit' },
-        { href: '/orders', label: 'จัดการออเดอร์', icon: '🧾', desc: 'ดูรายการคำสั่งซื้อทั้งหมด' },
         { href: '/orders/create', label: 'สร้างออเดอร์', icon: '➕', desc: 'สร้างคำสั่งซื้อใหม่' },
       ]
     }

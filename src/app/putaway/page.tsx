@@ -8,7 +8,7 @@ export default async function PutawayPage() {
 
   return (
     <>
-      <Header title="ย้ายโซน (Put-away)" showBack backHref="/dashboard" />
+      <Header title="สินค้าเหลือส่งคืน (Putaway)" showBack backHref="/dashboard" />
       <div className="p-4 pb-32">
         <PutawayScanner products={products} locations={locations} />
       </div>
