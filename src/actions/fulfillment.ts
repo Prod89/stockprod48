@@ -104,3 +104,56 @@ export async function returnOrderToStock(orderId: string) {
   
   return { success: true }
 }
+
+export async function getProductInfo(sku: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('inventory_by_location_view')
+    .select('*')
+    .eq('sku', sku)
+
+  if (error || !data || data.length === 0) {
+    const { data: pData } = await supabase.from('products').select('*').eq('sku', sku).single()
+    if (!pData) return { error: 'ไม่พบสินค้ารหัส ' + sku }
+    return { 
+      product: { sku: pData.sku, name: pData.name }, 
+      total_qty: 0, 
+      status: 'Out of Stock' 
+    }
+  }
+
+  const totalQty = data.reduce((sum, item) => sum + Number(item.physical_qty), 0)
+  
+  return {
+    product: { sku: data[0].sku, name: data[0].name },
+    total_qty: totalQty,
+    status: totalQty > 0 ? 'Available' : 'Out of Stock',
+    locations: data.map(d => ({ zone: d.zone_name, qty: d.physical_qty }))
+  }
+}
+
+export async function directOutbound(sku: string, qty: number = 1) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data, error } = await supabase.rpc('direct_outbound', {
+    p_sku: sku,
+    p_qty: qty,
+    p_user_id: user.id
+  })
+
+  if (error) {
+    return { error: 'ตัดสต็อกไม่สำเร็จ: ' + error.message }
+  }
+
+  if (data && data.success === false) {
+    return { error: data.error }
+  }
+
+  revalidatePath('/packing')
+  revalidatePath('/dashboard')
+  revalidatePath('/owner/dashboard')
+
+  return { success: true, product_name: data?.product_name, remaining: data?.remaining }
+}

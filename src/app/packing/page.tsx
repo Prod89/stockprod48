@@ -1,15 +1,12 @@
-import { getRecentOrders } from '@/actions/orders'
 import { Header } from '@/components/layout/Header'
-import { PackingScanner } from '@/components/packing/PackingScanner'
+import { LivePackingScanner } from '@/components/packing/LivePackingScanner'
 
-export default async function PackingPage() {
-  const pendingOrders = await getRecentOrders('PENDING')
-
+export default function PackingPage() {
   return (
     <>
       <Header title="แพ็คของ (Packing)" showBack backHref="/dashboard" />
       <div className="p-4 pb-32">
-        <PackingScanner orders={pendingOrders} />
+        <LivePackingScanner />
       </div>
     </>
   )
