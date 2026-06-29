@@ -36,22 +36,26 @@ export async function OwnerDashboard() {
     <div className="p-4 pb-32 space-y-6">
       
       {/* Quick Access (Compact) */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <Link href="/inbound" className="bg-slate-800 border border-indigo-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
-          <span className="text-2xl">📥</span>
-          <span className="text-xs font-medium text-white">รับเข้า</span>
+      <div className="grid grid-cols-5 gap-2 mb-6">
+        <Link href="/inbound" className="bg-slate-800 border border-indigo-500/30 p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-700 transition-colors">
+          <span className="text-xl">📥</span>
+          <span className="text-[10px] font-medium text-white">รับเข้า</span>
         </Link>
-        <Link href="/packing" className="bg-slate-800 border border-violet-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
-          <span className="text-2xl">📦</span>
-          <span className="text-xs font-medium text-white">จัดแพ็ค</span>
+        <Link href="/packing" className="bg-slate-800 border border-violet-500/30 p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-700 transition-colors">
+          <span className="text-xl">📦</span>
+          <span className="text-[10px] font-medium text-white">จัดแพ็ค</span>
         </Link>
-        <Link href="/returns" className="bg-slate-800 border border-rose-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
-          <span className="text-2xl">🔄</span>
-          <span className="text-xs font-medium text-white">คืนของ</span>
+        <Link href="/returns" className="bg-slate-800 border border-rose-500/30 p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-700 transition-colors">
+          <span className="text-xl">🔄</span>
+          <span className="text-[10px] font-medium text-white">คืนของ</span>
         </Link>
-        <Link href="/stock-take" className="bg-slate-800 border border-amber-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
-          <span className="text-2xl">📋</span>
-          <span className="text-xs font-medium text-white">เช็คสต็อก</span>
+        <Link href="/stock-take" className="bg-slate-800 border border-amber-500/30 p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-700 transition-colors">
+          <span className="text-xl">📋</span>
+          <span className="text-[10px] font-medium text-white">เช็คสต็อก</span>
+        </Link>
+        <Link href="/owner/inventory" className="bg-slate-800 border border-emerald-500/30 p-2 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-slate-700 transition-colors">
+          <span className="text-xl">🔍</span>
+          <span className="text-[10px] font-medium text-white text-center leading-tight">คลังสินค้า<br/>เชิงลึก</span>
         </Link>
       </div>
 
