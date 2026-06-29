@@ -213,74 +213,64 @@ export function InventoryLocationManager({ inventory, locations }: InventoryLoca
         className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
       />
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs text-left text-slate-300">
-          <thead className="text-[10px] text-indigo-300 uppercase bg-white/5 sticky top-0">
-            <tr>
-              <th className="px-3 py-2.5">SKU / ชื่อสินค้า</th>
-              <th className="px-3 py-2.5">สถานที่ (Location)</th>
-              <th className="px-3 py-2.5">สถานะ</th>
-              <th className="px-3 py-2.5 text-right">จำนวน</th>
-              <th className="px-3 py-2.5 text-right">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {filteredInventory.map((item, idx) => (
-              <tr key={`${item.product_id}-${item.location_id}-${idx}`} className="hover:bg-white/5">
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <p className="font-mono text-indigo-300 font-bold">{item.sku}</p>
-                      <p className="text-white max-w-[150px] truncate" title={item.name}>{item.name}</p>
-                    </div>
-                    <button 
-                      onClick={() => setEditingDetails({ type: 'PRODUCT', id: item.product_id, name: item.name, details: '' })}
-                      className="text-slate-500 hover:text-indigo-400 p-1" title="แก้ไขชื่อสินค้า"
-                    >
-                      ✎
-                    </button>
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-300">{item.zone_name}</span>
-                    {item.location_id && (
-                      <button 
-                        onClick={() => setEditingDetails({ type: 'LOCATION', id: item.location_id, name: item.zone_name, details: '' })}
-                        className="text-slate-500 hover:text-indigo-400 p-1" title="แก้ไขชื่อสถานที่"
-                      >
-                        ✎
-                      </button>
-                    )}
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(item.status_state)}`}>
-                    {item.status_state}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right font-mono font-bold text-white">
-                  {item.physical_qty}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <Button 
-                    onClick={() => {
-                      setEditingItem(item)
-                      setTransferQty(item.physical_qty.toString())
-                      setToLocation('')
-                    }} 
-                    size="sm" variant="secondary" className="text-[10px] h-6 px-2 py-0"
+      <p className="text-xs text-slate-500">แสดง {filteredInventory.length} รายการ</p>
+
+      {/* Mobile Card Layout for Inventory */}
+      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+        {filteredInventory.map((item, idx) => (
+          <div key={`${item.product_id}-${item.location_id}-${idx}`} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3">
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-mono text-indigo-300 font-bold">{item.sku}</p>
+                  <button 
+                    onClick={() => setEditingDetails({ type: 'PRODUCT', id: item.product_id, name: item.name, details: '' })}
+                    className="text-slate-500 hover:text-indigo-400" title="แก้ไขชื่อสินค้า"
                   >
-                    ย้าย (Move)
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {filteredInventory.length === 0 && (
-              <tr><td colSpan={5} className="text-center py-4 text-slate-500">ไม่พบข้อมูลสินค้า</td></tr>
-            )}
-          </tbody>
-        </table>
+                    ✎
+                  </button>
+                </div>
+                <p className="text-white text-sm truncate" title={item.name}>{item.name}</p>
+              </div>
+              <div className="text-right flex-shrink-0 bg-slate-950 p-2 rounded-xl border border-white/5">
+                <p className="text-[10px] text-slate-500 mb-0.5">จำนวนชิ้น</p>
+                <p className="text-base font-bold text-emerald-400 font-mono">{item.physical_qty}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-900/50 p-2.5 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">พิกัด:</span>
+                <span className="font-bold text-slate-200 text-sm">{item.zone_name}</span>
+                {item.location_id && (
+                  <button 
+                    onClick={() => setEditingDetails({ type: 'LOCATION', id: item.location_id, name: item.zone_name, details: '' })}
+                    className="text-slate-500 hover:text-indigo-400" title="แก้ไขชื่อสถานที่"
+                  >
+                    ✎
+                  </button>
+                )}
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getStatusColor(item.status_state)}`}>
+                {item.status_state}
+              </span>
+            </div>
+
+            <Button 
+              onClick={() => {
+                setEditingItem(item)
+                setTransferQty(item.physical_qty.toString())
+                setToLocation('')
+              }} 
+              variant="secondary" className="w-full min-h-[40px] text-xs"
+            >
+              📦 ย้ายสต็อก (Move)
+            </Button>
+          </div>
+        ))}
+        {filteredInventory.length === 0 && (
+          <p className="text-center py-6 text-slate-500 text-sm">ไม่พบข้อมูลสินค้า</p>
+        )}
       </div>
     </Card>
   )

@@ -123,33 +123,40 @@ export function BaleCostManager({ baleHistory }: BaleCostManagerProps) {
         </div>
       )}
 
-      {/* History Table */}
+      {/* History Cards (Mobile First) */}
       {baleHistory.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-slate-300">
-            <thead className="text-[10px] text-amber-300 uppercase bg-white/5">
-              <tr>
-                <th className="px-3 py-2">ล็อต</th>
-                <th className="px-3 py-2 text-right">ค่ากระสอบ</th>
-                <th className="px-3 py-2 text-right">ค่าขนส่ง</th>
-                <th className="px-3 py-2 text-right">ค่าอื่นๆ</th>
-                <th className="px-3 py-2 text-right">ชิ้น</th>
-                <th className="px-3 py-2 text-right">ต้นทุน/ชิ้น</th>
-              </tr>
-            </thead>
-            <tbody>
-              {baleHistory.map((row: any) => (
-                <tr key={row.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="px-3 py-2 text-indigo-300 font-mono font-bold">{row.lot_date}</td>
-                  <td className="px-3 py-2 text-right font-mono">฿{Number(row.bale_cost).toLocaleString()}</td>
-                  <td className="px-3 py-2 text-right font-mono">฿{Number(row.shipping_cost).toLocaleString()}</td>
-                  <td className="px-3 py-2 text-right font-mono">฿{Number(row.misc_cost).toLocaleString()}</td>
-                  <td className="px-3 py-2 text-right font-mono text-white">{row.total_units}</td>
-                  <td className="px-3 py-2 text-right font-mono text-emerald-400 font-bold">฿{Number(row.avg_unit_cost).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-3 mt-4">
+          <p className="text-xs text-slate-500">ประวัติการบันทึก ({baleHistory.length} รายการ)</p>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+            {baleHistory.map((row: any) => (
+              <div key={row.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <span className="font-mono text-sm font-bold text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded">Lot: {row.lot_date}</span>
+                  <span className="text-xs text-slate-400 font-mono">{row.total_units} ชิ้น</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-slate-950/50 p-2 rounded-lg text-center border border-white/5">
+                    <p className="text-[10px] text-slate-500 mb-0.5">ค่ากระสอบ</p>
+                    <p className="text-xs font-bold text-slate-300 font-mono">฿{Number(row.bale_cost).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-slate-950/50 p-2 rounded-lg text-center border border-white/5">
+                    <p className="text-[10px] text-slate-500 mb-0.5">ค่าขนส่ง</p>
+                    <p className="text-xs font-bold text-slate-300 font-mono">฿{Number(row.shipping_cost).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-slate-950/50 p-2 rounded-lg text-center border border-white/5">
+                    <p className="text-[10px] text-slate-500 mb-0.5">ค่าอื่นๆ</p>
+                    <p className="text-xs font-bold text-slate-300 font-mono">฿{Number(row.misc_cost).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+                  <span className="text-xs text-emerald-400/80">ต้นทุนเฉลี่ย/ชิ้น</span>
+                  <span className="font-bold text-emerald-400 text-sm font-mono tracking-wide">฿{Number(row.avg_unit_cost).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </Card>

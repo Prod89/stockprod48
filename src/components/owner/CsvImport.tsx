@@ -102,26 +102,19 @@ export function CsvImport() {
       </div>
 
       {preview.length > 0 && (
-        <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 overflow-x-auto">
+        <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 space-y-2">
           <p className="text-xs font-bold text-slate-400 mb-2">ตัวอย่างข้อมูล (3 แถวแรก):</p>
-          <table className="w-full text-left text-xs text-white min-w-[300px]">
-            <thead>
-              <tr className="text-slate-500">
-                <th className="pb-1">Product ID</th>
-                <th className="pb-1">Type</th>
-                <th className="pb-1">Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.map((row, i) => (
-                <tr key={i} className="border-t border-white/5">
-                  <td className="py-1 truncate max-w-[100px]">{row.product_id}</td>
-                  <td className="py-1">{row.transaction_type}</td>
-                  <td className="py-1">{row.quantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {preview.map((row, i) => (
+            <div key={i} className="bg-white/5 p-2.5 rounded-lg flex justify-between items-center text-xs">
+              <div className="flex-1 truncate pr-2">
+                <span className="text-slate-500">ID:</span> <span className="font-mono text-white truncate inline-block max-w-[80px] align-bottom">{row.product_id}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 font-bold">{row.transaction_type}</span>
+                <span className="font-mono font-bold text-emerald-400">Qty: {row.quantity}</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
