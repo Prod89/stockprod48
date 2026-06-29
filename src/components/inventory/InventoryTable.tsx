@@ -8,6 +8,9 @@ import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import type { InventoryDetailItem } from '@/actions/inventory'
 import { bulkMoveStock } from '@/actions/inventory'
+import { updateEntityDetails } from '@/actions/owner'
+import { format } from 'date-fns'
+import { th } from 'date-fns/locale'
 
 interface InventoryTableProps {
   initialData: InventoryDetailItem[]
@@ -31,6 +34,8 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
   const [moveReason, setMoveReason] = useState('จัดระเบียบสต็อก')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [editingDetails, setEditingDetails] = useState<{ id: string, name: string } | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // Memoized filtered and sorted data
   const processedData = useMemo(() => {
@@ -150,6 +155,29 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
     })
   }
 
+  const handleSaveDetails = () => {
+    if (!editingDetails || !editingDetails.name) return
+    startTransition(async () => {
+      const result = await updateEntityDetails(
+        'LOCATION',
+        editingDetails.id,
+        editingDetails.name,
+        ''
+      )
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setMessage({ type: 'success', text: 'แก้ไขชื่อสถานที่สำเร็จ' })
+        // Optimistic update
+        setData(prev => prev.map(item => 
+          item.location_id === editingDetails.id ? { ...item, zone_name: editingDetails.name } : item
+        ))
+        setEditingDetails(null)
+      }
+      setTimeout(() => setMessage(null), 3000)
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Action Bar */}
@@ -190,6 +218,12 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
         </div>
       </div>
 
+      {message && (
+        <div className={`p-3 rounded-lg text-sm ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+          {message.text}
+        </div>
+      )}
+
       {/* Bulk Move Panel */}
       {isBulkMoveOpen && (
         <Card padding="md" className="bg-indigo-900/20 border-indigo-500/30">
@@ -216,6 +250,32 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
           </div>
           {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
         </Card>
+      )}
+
+      {/* Editing Modal for Location Details */}
+      {editingDetails && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 p-5 rounded-2xl w-full max-w-sm space-y-4 shadow-2xl">
+            <h4 className="text-lg font-bold text-white">แก้ไขชื่อสถานที่ (Location)</h4>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">ชื่อสถานที่</label>
+                <input 
+                  type="text"
+                  value={editingDetails.name} onChange={e => setEditingDetails({...editingDetails, name: e.target.value})}
+                  className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => setEditingDetails(null)} variant="secondary" className="flex-1">ยกเลิก</Button>
+              <Button onClick={handleSaveDetails} disabled={isPending || !editingDetails.name} className="flex-1">
+                {isPending ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Table */}
@@ -271,7 +331,17 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                     <p className="text-xs text-slate-400 max-w-[200px] truncate" title={item.name}>{item.name}</p>
                   </td>
                   <td className="p-4">
-                    <Badge variant="default">{item.zone_name}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">{item.zone_name}</Badge>
+                      <button 
+                        onClick={() => setEditingDetails({ id: item.location_id, name: item.zone_name })}
+                        className="text-slate-500 hover:text-indigo-400 p-1 transition-colors" title="แก้ไขชื่อสถานที่"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                   <td className="p-4 text-right font-mono text-emerald-400 font-medium">
                     {item.quantity}
@@ -283,9 +353,16 @@ export function InventoryTable({ initialData, locations }: InventoryTableProps) 
                     ฿{item.total_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="p-4 text-center">
-                    <Badge variant={item.stock_age_days > 90 ? 'error' : item.stock_age_days > 30 ? 'warning' : 'success'}>
-                      {item.stock_age_days} วัน
-                    </Badge>
+                    <div className="flex flex-col items-center">
+                      <Badge variant={item.stock_age_days > 90 ? 'error' : item.stock_age_days > 30 ? 'warning' : 'success'}>
+                        {item.stock_age_days} วัน
+                      </Badge>
+                      {item.first_in_date && (
+                        <span className="text-[10px] text-slate-500 mt-1 whitespace-nowrap">
+                          รับเข้า: {format(new Date(item.first_in_date), 'd MMM yyyy', { locale: th })}
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

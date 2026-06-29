@@ -29,6 +29,7 @@ export interface InventoryDetailItem {
   cost_price: number
   total_value: number
   stock_age_days: number
+  first_in_date: string | null
   image_url: string | null
 }
 
@@ -93,6 +94,7 @@ export async function getDetailedInventory(): Promise<InventoryDetailItem[]> {
       cost_price: cost_price,
       total_value: cost_price * qty,
       stock_age_days,
+      first_in_date: firstIn ? firstIn.toISOString() : null,
       image_url: null // Placeholder as products table lacks image_url currently
     }
   }).filter(item => item.quantity > 0)
