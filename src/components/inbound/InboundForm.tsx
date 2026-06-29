@@ -253,17 +253,30 @@ export function InboundForm({ products, locations }: InboundFormProps) {
             />
           </Card>
           {selectedProduct && (
-            <Card className="border-indigo-500/20 bg-indigo-500/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">{selectedProduct.name}</p>
+            <Card className="border-indigo-500/20 bg-indigo-500/5 animate-in fade-in-50 duration-200">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <p className="text-white font-medium text-sm">{selectedProduct.name}</p>
                   <p className="text-xs text-white/50 font-mono mt-0.5">SKU: {selectedProduct.sku}</p>
+                  {selectedProduct.grade && (
+                    <div className="mt-1">
+                      <Badge variant={selectedProduct.grade === 'Premium' ? 'premium' : selectedProduct.grade === '1' ? 'grade1' : selectedProduct.grade === '2' ? 'grade2' : 'grade3'}>
+                        {selectedProduct.grade === 'Premium' ? 'Premium' : `เกรด ${selectedProduct.grade}`}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-                {selectedProduct.grade && (
-                  <Badge variant={selectedProduct.grade === 'Premium' ? 'premium' : selectedProduct.grade === '1' ? 'grade1' : selectedProduct.grade === '2' ? 'grade2' : 'grade3'}>
-                    {selectedProduct.grade === 'Premium' ? 'Premium' : `เกรด ${selectedProduct.grade}`}
-                  </Badge>
-                )}
+                <Button 
+                  onClick={() => {
+                    setLastSavedSku({ sku: selectedProduct.sku, name: selectedProduct.name })
+                    setShowBarcode(true)
+                  }}
+                  size="sm"
+                  variant="secondary"
+                  className="min-h-[36px] text-xs py-1"
+                >
+                  พิมพ์ป้าย (Print)
+                </Button>
               </div>
             </Card>
           )}

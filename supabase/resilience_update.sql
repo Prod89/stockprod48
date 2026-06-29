@@ -7,6 +7,7 @@
 ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS before_qty INT;
 ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS after_qty INT;
 ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS reason_code VARCHAR;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS sku VARCHAR;
 
 -- 2. Add is_active flag to profiles table (Security Lockdown)
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
@@ -26,6 +27,7 @@ DECLARE
     v_diff INT := 0;
     v_reason_code VARCHAR;
     v_prod_id UUID;
+    v_sku VARCHAR;
 BEGIN
     v_user_id := auth.uid();
     
@@ -47,6 +49,9 @@ BEGIN
             v_prod_id := OLD.product_id;
             v_reason_code := OLD.reason_code;
         END IF;
+
+        -- Resolve SKU
+        SELECT sku INTO v_sku FROM public.products WHERE id = v_prod_id;
 
         -- Calculate balance before this transaction
         SELECT COALESCE(SUM(
@@ -76,22 +81,24 @@ BEGIN
         ELSE -- DELETE
             v_after_qty := v_before_qty;
         END IF;
+    ELSIF TG_TABLE_NAME = 'products' THEN
+        v_sku := COALESCE(NEW.sku, OLD.sku);
     END IF;
 
     IF TG_OP = 'INSERT' THEN
         v_record_id := NEW.id;
-        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, new_data)
-        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_after_qty, v_reason_code, row_to_json(NEW)::jsonb);
+        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, sku, new_data)
+        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_after_qty, v_reason_code, v_sku, row_to_json(NEW)::jsonb);
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         v_record_id := NEW.id;
-        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, old_data, new_data)
-        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_after_qty, v_reason_code, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb);
+        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, sku, old_data, new_data)
+        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_after_qty, v_reason_code, v_sku, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb);
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         v_record_id := OLD.id;
-        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, old_data)
-        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_before_qty, v_reason_code, row_to_json(OLD)::jsonb);
+        INSERT INTO public.audit_logs (table_name, action_type, record_id, user_id, device_info, before_qty, after_qty, reason_code, sku, old_data)
+        VALUES (TG_TABLE_NAME, TG_OP, v_record_id, v_user_id, v_device_info, v_before_qty, v_before_qty, v_reason_code, v_sku, row_to_json(OLD)::jsonb);
         RETURN OLD;
     END IF;
     RETURN NULL;

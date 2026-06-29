@@ -180,6 +180,115 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
           </div>
         </Card>
       )}
+
+      {/* Inventory Reconciliation List */}
+      <Card padding="md" className="space-y-4">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          ตารางเปรียบเทียบสต็อกจริง (Inventory Reconciliation)
+        </h3>
+        
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+          {products.map((p) => {
+            const expected = stockView.find(s => s.product_id === p.id)?.physical_qty || 0
+            return (
+              <ReconciliationRow 
+                key={p.id} 
+                product={p} 
+                expectedQty={expected} 
+                locations={locations}
+              />
+            )
+          })}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function ReconciliationRow({ product, expectedQty, locations }: { product: any, expectedQty: number, locations: any[] }) {
+  const [actual, setActual] = useState<number | ''>('')
+  const [locId, setLocId] = useState('')
+  const [reason, setReason] = useState('STOCK_TAKE')
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+
+  const diff = typeof actual === 'number' ? actual - expectedQty : 0
+
+  const handleQuickAdjust = async () => {
+    if (typeof actual !== 'number' || !locId || !reason) {
+      alert('กรุณาเลือกตำแหน่งและใส่ยอดจริง')
+      return
+    }
+    if (diff === 0) return
+
+    setLoading(true)
+    setStatus(null)
+    const result = await adjustStock(product.id, locId, diff, reason)
+    setLoading(false)
+    if (result.error) {
+      setStatus(`Error: ${result.error}`)
+    } else {
+      setStatus('ปรับยอดสำเร็จ!')
+      setActual('')
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl border border-white/5 text-sm">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-white font-medium text-xs">{product.name}</p>
+          <p className="text-[10px] text-slate-400 font-mono">SKU: {product.sku}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-slate-400">ระบบ: <strong className="text-white">{expectedQty}</strong></p>
+          {diff !== 0 && (
+            <p className={`text-[10px] font-bold ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+              ต่าง: {diff > 0 ? `+${diff}` : diff}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 items-center">
+        <input 
+          type="number" 
+          placeholder="ยอดจริง" 
+          value={actual}
+          onChange={(e) => setActual(e.target.value === '' ? '' : parseInt(e.target.value))}
+          className="bg-slate-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white min-h-[30px]"
+        />
+        <select 
+          value={locId} 
+          onChange={(e) => setLocId(e.target.value)}
+          className="bg-slate-900 border border-white/10 rounded-lg px-1 py-1 text-xs text-white min-h-[30px]"
+        >
+          <option value="">ตำแหน่ง</option>
+          {locations.map(l => (
+            <option key={l.id} value={l.id}>{l.zone_name}</option>
+          ))}
+        </select>
+        <Button 
+          onClick={handleQuickAdjust} 
+          isLoading={loading}
+          disabled={diff === 0 || !locId}
+          size="sm"
+          className="text-xs min-h-[30px] font-semibold py-1 bg-indigo-600"
+        >
+          Auto-Adjust
+        </Button>
+      </div>
+      {status && (
+        <p className={`text-[10px] ${status.includes('Error') ? 'text-red-400' : 'text-green-400'} text-center mt-1`}>
+          {status}
+        </p>
+      )}
     </div>
   )
 }
