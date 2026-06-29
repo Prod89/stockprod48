@@ -6,59 +6,71 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Supabase environment variables are missing!')
+    return supabaseResponse
+  }
+
+  try {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({
+              request,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            )
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
+      }
+    )
+
+    // Refresh session if expired - required for Server Components
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Redirect unauthenticated users to login (except for login page and public assets)
+    const isLoginPage = request.nextUrl.pathname === '/login'
+    const isPublicAsset = request.nextUrl.pathname.startsWith('/_next') ||
+      request.nextUrl.pathname.startsWith('/icons') ||
+      request.nextUrl.pathname === '/sw.js' ||
+      request.nextUrl.pathname === '/favicon.ico' ||
+      request.nextUrl.pathname === '/manifest.webmanifest'
+
+    if (!user && !isLoginPage && !isPublicAsset) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
     }
-  )
 
-  // Refresh session if expired - required for Server Components
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Redirect unauthenticated users to login (except for login page and public assets)
-  const isLoginPage = request.nextUrl.pathname === '/login'
-  const isPublicAsset = request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/icons') ||
-    request.nextUrl.pathname === '/sw.js' ||
-    request.nextUrl.pathname === '/favicon.ico' ||
-    request.nextUrl.pathname === '/manifest.webmanifest'
-
-  if (!user && !isLoginPage && !isPublicAsset) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  // Redirect authenticated users away from login page
-  if (user && isLoginPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  // Owner Route Guard
-  if (user && request.nextUrl.pathname.startsWith('/owner')) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role !== 'owner') {
+    // Redirect authenticated users away from login page
+    if (user && isLoginPage) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
     }
+
+    // Owner Route Guard
+    if (user && request.nextUrl.pathname.startsWith('/owner')) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role !== 'owner') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
+    }
+  } catch (err) {
+    console.error('Middleware session update failed:', err)
   }
 
   return supabaseResponse
