@@ -82,7 +82,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Owner Route Guard
-    if (user && request.nextUrl.pathname.startsWith('/owner')) {
+    if (user && (request.nextUrl.pathname.startsWith('/owner') || request.nextUrl.pathname.startsWith('/orders'))) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
       if (profile?.role !== 'owner') {
         const url = request.nextUrl.clone()
