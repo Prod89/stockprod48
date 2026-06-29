@@ -1,0 +1,174 @@
+'use client'
+
+import { useState } from 'react'
+import { BarcodeInput } from '../inbound/BarcodeInput'
+import { Button } from '../ui/Button'
+import { Card } from '../ui/Card'
+import { Badge } from '../ui/Badge'
+import { confirmShipping } from '@/actions/fulfillment'
+
+export function PackingScanner({ orders }: { orders: any[] }) {
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
+  const [scannedItems, setScannedItems] = useState<{ [productId: string]: number }>({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const handleSelectOrder = (order: any) => {
+    setSelectedOrder(order)
+    setScannedItems({})
+    setError(null)
+    setSuccess(false)
+  }
+
+  const handleScan = (sku: string) => {
+    if (!selectedOrder) return
+
+    // Find if this SKU belongs to the order
+    const orderItem = selectedOrder.order_items.find((item: any) => item.product.sku === sku)
+    
+    if (!orderItem) {
+      setError(`ไม่พบสินค้ารหัส ${sku} ในออเดอร์นี้`)
+      return
+    }
+
+    const currentScanned = scannedItems[orderItem.product_id] || 0
+    if (currentScanned >= orderItem.ordered_qty) {
+      setError(`สแกนสินค้า ${sku} ครบจำนวนแล้ว`)
+      return
+    }
+
+    setError(null)
+    setScannedItems(prev => ({
+      ...prev,
+      [orderItem.product_id]: currentScanned + 1
+    }))
+  }
+
+  const checkIsComplete = () => {
+    if (!selectedOrder) return false
+    return selectedOrder.order_items.every((item: any) => 
+      (scannedItems[item.product_id] || 0) === item.ordered_qty
+    )
+  }
+
+  const handleConfirm = async () => {
+    if (!checkIsComplete() || !selectedOrder) return
+    
+    setLoading(true)
+    setError(null)
+    
+    const result = await confirmShipping(selectedOrder.id)
+    
+    setLoading(false)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setSuccess(true)
+      setTimeout(() => {
+        // Refresh page or clear selection
+        window.location.reload()
+      }, 1500)
+    }
+  }
+
+  if (success) {
+    return (
+      <Card className="p-8 text-center flex flex-col items-center gap-4">
+        <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-white">แพ็คของสำเร็จ!</h3>
+        <p className="text-slate-400">ออเดอร์ถูกเปลี่ยนสถานะเป็นส่งแล้ว</p>
+      </Card>
+    )
+  }
+
+  if (!selectedOrder) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-medium text-white">เลือกออเดอร์ที่ต้องการแพ็ค</h2>
+        {orders.map(order => (
+          <Card 
+            key={order.id} 
+            padding="md" 
+            className="cursor-pointer hover:border-indigo-500/50 transition-colors"
+            onClick={() => handleSelectOrder(order)}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium text-white">{order.customer_name}</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  ต้องแพ็คทั้งหมด: {order.order_items.reduce((sum: number, item: any) => sum + item.ordered_qty, 0)} ชิ้น
+                </p>
+              </div>
+              <Badge variant="warning">{order.status}</Badge>
+            </div>
+          </Card>
+        ))}
+        {orders.length === 0 && (
+          <div className="text-center py-10 text-slate-400">ไม่มีออเดอร์ที่รอแพ็ค</div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-medium text-white">
+          กำลังแพ็ค: <span className="text-indigo-400">{selectedOrder.customer_name}</span>
+        </h2>
+        <button onClick={() => setSelectedOrder(null)} className="text-sm text-slate-400 hover:text-white">
+          กลับไปเลือกออเดอร์
+        </button>
+      </div>
+
+      <Card padding="md" className="space-y-4">
+        <label className="block text-sm font-medium text-slate-300">
+          สแกนบาร์โค้ดสินค้าทีละชิ้น
+        </label>
+        <BarcodeInput onScan={handleScan} />
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+      </Card>
+
+      <div className="space-y-3">
+        {selectedOrder.order_items.map((item: any) => {
+          const scanned = scannedItems[item.product_id] || 0
+          const total = item.ordered_qty
+          const isComplete = scanned === total
+
+          return (
+            <Card key={item.id} padding="md" className={isComplete ? 'border-green-500/30 bg-green-500/5' : ''}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-white font-medium">{item.product.name}</p>
+                  <p className="text-sm text-slate-400">SKU: {item.product.sku}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold font-mono flex items-baseline gap-1">
+                    <span className={isComplete ? 'text-green-400' : 'text-indigo-400'}>{scanned}</span>
+                    <span className="text-sm text-slate-500">/ {total}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+
+      <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-slate-900/90 backdrop-blur-xl border-t border-white/5">
+        <Button 
+          onClick={handleConfirm} 
+          disabled={!checkIsComplete()} 
+          isLoading={loading}
+          className="w-full h-14 text-lg shadow-lg"
+        >
+          ยืนยันการจัดส่ง (Confirm Shipping)
+        </Button>
+      </div>
+    </div>
+  )
+}
