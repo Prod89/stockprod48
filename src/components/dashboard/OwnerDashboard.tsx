@@ -1,5 +1,5 @@
 import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles, getSalesAnalytics, getCostSummary, getLotLocationStock, getTransactionSummary, getLotProfitability, getAgingAnalysis, getBaleHistory, getStockToCash, getInventoryByLocation, getActiveLocations } from '@/actions/owner'
-import { Header } from '@/components/layout/Header'
+import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { CsvImport } from '@/components/owner/CsvImport'
@@ -10,7 +10,7 @@ import { BaleCostManager } from '@/components/owner/BaleCostManager'
 import { InventoryLocationManager } from '@/components/owner/InventoryLocationManager'
 import { format } from 'date-fns'
 
-export default async function OwnerDashboardPage() {
+export async function OwnerDashboard() {
   const valuation = await getValuationSummary()
   const deadStock = await getDeadStock()
   const lowStock = await getLowStock()
@@ -33,11 +33,29 @@ export default async function OwnerDashboardPage() {
   const totalDeadValue = deadStock.reduce((sum: number, item: any) => sum + Number(item.stranded_value), 0)
 
   return (
-    <>
-      <Header title="Executive Dashboard" showBack backHref="/dashboard" />
-      <div className="p-4 pb-24 space-y-6">
-        
-        {/* Total Assets Summary */}
+    <div className="p-4 pb-32 space-y-6">
+      
+      {/* Quick Access (Compact) */}
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        <Link href="/inbound" className="bg-slate-800 border border-indigo-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
+          <span className="text-2xl">📥</span>
+          <span className="text-xs font-medium text-white">รับเข้า</span>
+        </Link>
+        <Link href="/packing" className="bg-slate-800 border border-violet-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
+          <span className="text-2xl">📦</span>
+          <span className="text-xs font-medium text-white">จัดแพ็ค</span>
+        </Link>
+        <Link href="/returns" className="bg-slate-800 border border-rose-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
+          <span className="text-2xl">🔄</span>
+          <span className="text-xs font-medium text-white">คืนของ</span>
+        </Link>
+        <Link href="/stock-take" className="bg-slate-800 border border-amber-500/30 p-3 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-slate-700 transition-colors">
+          <span className="text-2xl">📋</span>
+          <span className="text-xs font-medium text-white">เช็คสต็อก</span>
+        </Link>
+      </div>
+
+      {/* Total Assets Summary */}
         <div className="bg-gradient-to-br from-indigo-900 to-violet-900 p-6 rounded-3xl border border-indigo-500/30 shadow-2xl">
           <h2 className="text-indigo-200 text-sm font-medium mb-1">มูลค่าสินทรัพย์รวม (Stock Value)</h2>
           <p className="text-4xl font-bold text-white mb-6">฿{totalValue.toLocaleString()}</p>
@@ -238,6 +256,6 @@ export default async function OwnerDashboardPage() {
         </div>
 
       </div>
-    </>
   )
 }
+

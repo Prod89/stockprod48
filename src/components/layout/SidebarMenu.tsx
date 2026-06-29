@@ -100,7 +100,7 @@ export function SidebarMenu() {
     {
       section: 'หลังบ้านผู้บริหาร',
       items: [
-        { href: '/owner/dashboard', label: 'แดชบอร์ดผู้บริหาร', icon: '📊', desc: 'ภาพรวมการเงิน สต็อก กำไร' },
+        { href: '/dashboard', label: 'แดชบอร์ดผู้บริหาร', icon: '📊', desc: 'ภาพรวมการเงิน สต็อก กำไร' },
         { href: '/orders', label: 'จัดการออเดอร์', icon: '🧾', desc: 'ดูรายการคำสั่งซื้อทั้งหมด' },
         { href: '/orders/create', label: 'สร้างออเดอร์', icon: '➕', desc: 'สร้างคำสั่งซื้อใหม่' },
       ]
