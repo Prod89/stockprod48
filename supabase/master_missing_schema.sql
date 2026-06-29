@@ -3,11 +3,16 @@
 -- ===========================================================================
 -- รันไฟล์นี้ครั้งเดียวใน Supabase SQL Editor เพื่อสร้างทุกส่วนของระบบ WMS ที่ยังตกหล่น
 
--- 0. Drop existing views that might depend on the transaction_type column
+-- 0. Drop existing views and triggers that might depend on the transaction_type column
 DROP VIEW IF EXISTS public.low_stock_view CASCADE;
 DROP VIEW IF EXISTS public.valuation_summary_view CASCADE;
 DROP VIEW IF EXISTS public.dead_stock_view CASCADE;
 DROP VIEW IF EXISTS public.available_stock_view CASCADE;
+
+DROP TRIGGER IF EXISTS audit_stock_ledger_trigger ON public.stock_ledger CASCADE;
+DROP TRIGGER IF EXISTS trigger_check_stock_integrity ON public.stock_ledger CASCADE;
+DROP TRIGGER IF EXISTS trigger_generate_dynamic_sku ON public.products CASCADE;
+DROP TRIGGER IF EXISTS audit_products_trigger ON public.products CASCADE;
 
 -- 1. Upgrade transaction_type column in stock_ledger to VARCHAR (prevents Postgres Enum limitations)
 ALTER TABLE public.stock_ledger ALTER COLUMN transaction_type TYPE VARCHAR USING transaction_type::VARCHAR;
