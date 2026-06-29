@@ -1,10 +1,12 @@
-import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles, getSalesAnalytics, getCostSummary, getLotLocationStock, getTransactionSummary } from '@/actions/owner'
+import { getValuationSummary, getDeadStock, getAuditLogs, getLowStock, getAllProfiles, getSalesAnalytics, getCostSummary, getLotLocationStock, getTransactionSummary, getLotProfitability, getAgingAnalysis, getBaleHistory, getStockToCash } from '@/actions/owner'
 import { Header } from '@/components/layout/Header'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { CsvImport } from '@/components/owner/CsvImport'
 import { UserManagement } from '@/components/owner/UserManagement'
 import { LotLocationViewer } from '@/components/owner/LotLocationViewer'
+import { AgingDashboard } from '@/components/owner/AgingDashboard'
+import { BaleCostManager } from '@/components/owner/BaleCostManager'
 import { format } from 'date-fns'
 
 export default async function OwnerDashboardPage() {
@@ -17,6 +19,10 @@ export default async function OwnerDashboardPage() {
   const costSummary = await getCostSummary()
   const lotLocationStock = await getLotLocationStock()
   const transactionSummary = await getTransactionSummary()
+  const lotProfitability = await getLotProfitability()
+  const agingData = await getAgingAnalysis()
+  const baleHistory = await getBaleHistory()
+  const stockToCash = await getStockToCash()
 
   const totalValue = valuation.reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
   const availableValue = valuation.filter((v: any) => v.status === 'AVAILABLE').reduce((sum: number, item: any) => sum + Number(item.total_value), 0)
@@ -137,6 +143,16 @@ export default async function OwnerDashboardPage() {
           costSummary={costSummary}
           transactionSummary={transactionSummary}
         />
+
+        {/* Aging + Profitability + Stock-to-Cash */}
+        <AgingDashboard 
+          agingData={agingData}
+          lotProfitability={lotProfitability}
+          stockToCash={stockToCash}
+        />
+
+        {/* Bale Cost Log */}
+        <BaleCostManager baleHistory={baleHistory} />
 
         {/* Dead Stock Alert */}
         <div className="space-y-3">

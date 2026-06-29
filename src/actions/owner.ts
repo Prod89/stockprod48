@@ -217,3 +217,125 @@ export async function getTransactionSummary() {
 
   return stats
 }
+
+export async function getLotProfitability() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('lot_profitability_view')
+    .select('*')
+    .order('lot_date', { ascending: false })
+
+  if (error) {
+    console.error('Lot profitability error:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function getAgingAnalysis() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('aging_analysis_view')
+    .select('*')
+    .order('days_in_stock', { ascending: false })
+
+  if (error) {
+    console.error('Aging analysis error:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function getBaleHistory() {
+  const supabase = await checkOwnerRole()
+  const { data, error } = await supabase
+    .from('bale_cost_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Bale history error:', error)
+    return []
+  }
+  return data || []
+}
+
+export async function saveBaleCost(formData: {
+  lot_date: string
+  bale_cost: number
+  shipping_cost: number
+  misc_cost: number
+  total_units: number
+  notes: string
+}) {
+  const supabase = await checkOwnerRole()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase
+    .from('bale_cost_log')
+    .insert({
+      lot_date: formData.lot_date,
+      bale_cost: formData.bale_cost,
+      shipping_cost: formData.shipping_cost,
+      misc_cost: formData.misc_cost,
+      total_units: formData.total_units,
+      notes: formData.notes,
+      user_id: user?.id
+    })
+
+  if (error) {
+    console.error('Save bale cost error:', error)
+    return { error: 'ไม่สามารถบันทึกต้นทุนกระสอบได้: ' + error.message }
+  }
+  return { success: true }
+}
+
+export async function getStockToCash() {
+  const supabase = await checkOwnerRole()
+
+  const { data: ledger } = await supabase
+    .from('stock_ledger')
+    .select('transaction_type, quantity, created_at')
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const lastMonthEnd = new Date(monthStart.getTime() - 1)
+
+  let openingStock = 0
+  let periodIn = 0
+  let periodOut = 0
+  let periodAdjust = 0
+
+  if (ledger) {
+    ledger.forEach((item: any) => {
+      const createdAt = new Date(item.created_at)
+      const qty = item.quantity
+      const type = item.transaction_type
+
+      if (createdAt <= lastMonthEnd) {
+        // Opening balance = all transactions before this month
+        if (type === 'IN' || type === 'ADJUST') openingStock += qty
+        if (type === 'OUT' || type === 'MOVE') openingStock -= qty
+      } else {
+        // Current period movements
+        if (type === 'IN') periodIn += qty
+        if (type === 'OUT') periodOut += qty
+        if (type === 'ADJUST') periodAdjust += qty
+      }
+    })
+  }
+
+  const closingStock = openingStock + periodIn - periodOut + periodAdjust
+  const expectedClosing = openingStock + periodIn - periodOut
+  const variance = closingStock - expectedClosing // difference from ADJUST
+
+  return {
+    openingStock,
+    periodIn,
+    periodOut,
+    periodAdjust,
+    closingStock,
+    expectedClosing,
+    variance
+  }
+}

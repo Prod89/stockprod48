@@ -111,6 +111,9 @@ export function BarcodeInput({
                   setLastScan(trimmed)
                   onScan(trimmed)
                   if (value === undefined) setInternalValue('')
+                  setTimeout(() => {
+                    inputRef.current?.focus()
+                  }, 50)
                 }
               }}
               className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg transition-colors"
