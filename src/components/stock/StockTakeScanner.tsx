@@ -7,6 +7,7 @@ import { Card } from '../ui/Card'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { adjustStock } from '@/actions/stockTakeAction'
+import { jsPDF } from 'jspdf'
 
 export function StockTakeScanner({ products, locations, stockView }: { products: any[], locations: any[], stockView: any[] }) {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
@@ -16,6 +17,37 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  const downloadStockChecklist = () => {
+    const pdf = new jsPDF()
+    pdf.text('Inventory Stock-Take Sheet (ใบเช็คสต็อก)', 14, 20)
+    pdf.setFontSize(10)
+    pdf.text(`พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH')}`, 14, 28)
+    
+    // Table headers
+    pdf.text('SKU', 14, 40)
+    pdf.text('Product Name', 55, 40)
+    pdf.text('Expected Qty', 140, 40)
+    pdf.text('Actual Qty', 170, 40)
+    pdf.line(14, 43, 196, 43)
+
+    let y = 52
+    products.forEach((p) => {
+      if (y > 280) {
+        pdf.addPage()
+        y = 20
+      }
+      const expected = stockView.find(s => s.product_id === p.id)?.physical_qty || 0
+      pdf.text(p.sku || '', 14, y)
+      pdf.text(p.name?.substring(0, 25) || '', 55, y)
+      pdf.text(String(expected), 145, y)
+      pdf.text('[      ]', 172, y)
+      pdf.line(14, y + 3, 196, y + 3)
+      y += 10
+    })
+
+    pdf.save('stock-take-sheet.pdf')
+  }
 
   const handleScan = (sku: string) => {
     let product = products.find(p => p.sku?.toLowerCase() === sku.toLowerCase())
@@ -74,7 +106,12 @@ export function StockTakeScanner({ products, locations, stockView }: { products:
   return (
     <div className="space-y-6">
       <Card padding="md" className="space-y-4">
-        <label className="block text-sm font-medium text-slate-300">สแกน SKU สินค้าที่ต้องการเช็ค</label>
+        <div className="flex justify-between items-center">
+          <label className="block text-sm font-medium text-slate-300">สแกน SKU สินค้าที่ต้องการเช็ค</label>
+          <Button onClick={downloadStockChecklist} size="sm" variant="secondary" className="min-h-[36px]">
+            พิมพ์ใบเช็คสต็อก (PDF)
+          </Button>
+        </div>
         <BarcodeInput onScan={handleScan} />
         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
         {successMsg && <p className="text-green-400 text-sm text-center">{successMsg}</p>}

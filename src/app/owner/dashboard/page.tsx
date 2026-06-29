@@ -18,7 +18,7 @@ export default async function OwnerDashboardPage() {
 
   return (
     <>
-      <Header title="Executive Dashboard" />
+      <Header title="Executive Dashboard" showBack backHref="/dashboard" />
       <div className="p-4 pb-24 space-y-6">
         
         {/* Total Assets Summary */}

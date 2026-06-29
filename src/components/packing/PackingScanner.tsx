@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { confirmShipping } from '@/actions/fulfillment'
+import { jsPDF } from 'jspdf'
 
 export function PackingScanner({ orders }: { orders: any[] }) {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
@@ -13,6 +14,38 @@ export function PackingScanner({ orders }: { orders: any[] }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const downloadPickingList = () => {
+    if (!selectedOrder) return
+    const pdf = new jsPDF()
+    pdf.text('Picking & Packing List (ใบจัดของ)', 14, 20)
+    pdf.setFontSize(10)
+    pdf.text(`ลูกค้า: ${selectedOrder.customer_name}`, 14, 28)
+    pdf.text(`สถานะ: ${selectedOrder.status}`, 14, 34)
+    pdf.text(`วันที่ออเดอร์: ${new Date(selectedOrder.created_at).toLocaleDateString('th-TH')}`, 14, 40)
+
+    pdf.text('SKU', 14, 52)
+    pdf.text('Product Name', 55, 52)
+    pdf.text('Ordered Qty', 140, 52)
+    pdf.text('Check', 170, 52)
+    pdf.line(14, 55, 196, 55)
+
+    let y = 64
+    selectedOrder.order_items.forEach((item: any) => {
+      if (y > 280) {
+        pdf.addPage()
+        y = 20
+      }
+      pdf.text(item.product.sku || '', 14, y)
+      pdf.text(item.product.name?.substring(0, 25) || '', 55, y)
+      pdf.text(String(item.ordered_qty), 145, y)
+      pdf.text('[   ]', 172, y)
+      pdf.line(14, y + 3, 196, y + 3)
+      y += 10
+    })
+
+    pdf.save(`picking-list-${selectedOrder.customer_name}.pdf`)
+  }
 
   const handleSelectOrder = (order: any) => {
     setSelectedOrder(order)
@@ -118,12 +151,17 @@ export function PackingScanner({ orders }: { orders: any[] }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium text-white">
-          กำลังแพ็ค: <span className="text-indigo-400">{selectedOrder.customer_name}</span>
-        </h2>
-        <button onClick={() => setSelectedOrder(null)} className="text-sm text-slate-400 hover:text-white">
-          กลับไปเลือกออเดอร์
-        </button>
+        <div>
+          <h2 className="text-lg font-medium text-white">
+            กำลังแพ็ค: <span className="text-indigo-400">{selectedOrder.customer_name}</span>
+          </h2>
+          <button onClick={() => setSelectedOrder(null)} className="text-xs text-slate-400 hover:text-white mt-1 block">
+            ← กลับไปเลือกออเดอร์
+          </button>
+        </div>
+        <Button onClick={downloadPickingList} size="sm" variant="secondary" className="min-h-[36px]">
+          พิมพ์ใบจัดของ (PDF)
+        </Button>
       </div>
 
       <Card padding="md" className="space-y-4">

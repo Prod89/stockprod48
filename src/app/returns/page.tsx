@@ -7,7 +7,7 @@ export default async function ReturnsPage() {
 
   return (
     <>
-      <Header title="คืนของ (Returns)" />
+      <Header title="คืนของ (Returns)" showBack backHref="/dashboard" />
       <div className="p-4 pb-32">
         <ReturnForm orders={shippedOrders} />
       </div>

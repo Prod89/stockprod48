@@ -7,7 +7,7 @@ export default async function PackingPage() {
 
   return (
     <>
-      <Header title="แพ็คของ (Packing)" />
+      <Header title="แพ็คของ (Packing)" showBack backHref="/dashboard" />
       <div className="p-4 pb-32">
         <PackingScanner orders={pendingOrders} />
       </div>
