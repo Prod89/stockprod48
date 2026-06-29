@@ -157,3 +157,31 @@ export async function directOutbound(sku: string, qty: number = 1) {
 
   return { success: true, product_name: data?.product_name, remaining: data?.remaining }
 }
+
+export async function directReturn(sku: string, qty: number = 1, reason: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data, error } = await supabase.rpc('direct_return', {
+    p_sku: sku,
+    p_qty: qty,
+    p_user_id: user.id,
+    p_reason: reason
+  })
+
+  if (error) {
+    return { error: 'คืนสต็อกไม่สำเร็จ: ' + error.message }
+  }
+
+  if (data && data.success === false) {
+    return { error: data.error }
+  }
+
+  revalidatePath('/packing')
+  revalidatePath('/returns')
+  revalidatePath('/dashboard')
+  revalidatePath('/owner/dashboard')
+
+  return { success: true, product_name: data?.product_name }
+}
