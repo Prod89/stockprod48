@@ -82,6 +82,12 @@ export function SidebarMenu() {
         { href: '/orders', label: 'ขายแล้วรอจัดส่ง', icon: '🧾', desc: 'ออเดอร์ที่เตรียมจัดส่ง' },
         { href: '/putaway', label: 'สินค้าเหลือส่งคืน', icon: '🗄️', desc: 'เก็บสินค้ากลับเข้าชั้นวาง' },
       ]
+    },
+    {
+      section: 'ช่วยเหลือ',
+      items: [
+        { href: '/manual', label: 'คู่มือการใช้งาน', icon: '📖', desc: 'อธิบายวิธีการใช้งานระบบ' },
+      ]
     }
   ]
 
@@ -103,6 +109,12 @@ export function SidebarMenu() {
         { href: '/dashboard', label: 'แดชบอร์ดผู้บริหาร', icon: '📊', desc: 'ภาพรวมการเงิน สต็อก กำไร' },
         { href: '/owner/inventory', label: 'คลังสินค้าเชิงลึก', icon: '🔍', desc: 'ดูสต็อก ต้นทุน และ Bulk Edit' },
         { href: '/orders/create', label: 'สร้างออเดอร์', icon: '➕', desc: 'สร้างคำสั่งซื้อใหม่' },
+      ]
+    },
+    {
+      section: 'ช่วยเหลือ',
+      items: [
+        { href: '/manual', label: 'คู่มือการใช้งาน', icon: '📖', desc: 'อธิบายวิธีการใช้งานระบบ' },
       ]
     }
   ]
